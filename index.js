@@ -1,25 +1,39 @@
-const express = require('express');
-const path = require('path');
+const http = require('node:http');
+const path = require('node:path');
+const fs = require('node:fs/promises');
 
-const app = express();
-app.use(express.static(path.join(__dirname, 'views')));
+const PORT = 8080;
+const server = http
+  .createServer(function (req, res) {
+    res.setHeader('Content-Type', 'text/html');
 
-app.get('/', function indexCB(req, res) {
-  res.sendFile(path.join(__dirname, 'views', 'index.html'));
-});
+    let fileName;
+    switch (req.url) {
+      case '/':
+        fileName = 'index';
+        break;
+      case '/about':
+        fileName = 'about';
+        break;
+      case '/contact-me':
+        fileName = 'contact-me';
+        break;
+      default:
+        fileName = '404';
+    }
 
-app.get('/about', function aboutCB(req, res) {
-  res.sendFile(path.join(__dirname, 'views', 'about.html'));
-});
-
-app.get('/contact-me', function contactMeCB(req, res) {
-  res.sendFile(path.join(__dirname, 'views', 'contact-me.html'));
-});
-
-app.use(function notFoundCB(req, res) {
-  res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
-});
-
-app.listen('8080', function listenCB() {
-  console.log('Server is running on port 8080');
-});
+    const fullPath = path.join(__dirname, 'views', `${fileName}.html`);
+    fs.readFile(fullPath)
+      .then(function readSuccess(data) {
+        if (fileName === '404') {
+          res.statusCode = 404;
+        }
+        res.end(data);
+      })
+      .catch(function readError(err) {
+        console.log(err);
+      });
+  })
+  .listen(PORT, function listeCB() {
+    console.log(`Server is running on port ${PORT}`);
+  });
